@@ -34,19 +34,25 @@ import attr
 
 __author__ = "Michael-Keith Bernard"
 __all__ = [
-    'Either', 'Left', 'Right', 'left', 'right', 'fmap', 'app', 'pure', 'bind',
-    'combine', 'bimap', 'foldr', 'length', 'null', 'traverse', 'sequence',
-    'identity', 'join', 'lmap', 'attempt', 'should', 'predicate', 'kleisli',
-    'partition_eithers', 'EitherChain', 'chain', 'unchain',
+    'Either', 'Left', 'Right', 'left', 'failure', 'fail', 'right', 'success',
+    'succeed', 'fmap', 'app', 'pure', 'bind', 'combine', 'bimap', 'first',
+    'second', 'foldr', 'length', 'null', 'traverse', 'sequence', 'identity',
+    'join', 'lmap', 'attempt', 'should', 'predicate', 'kleisli',
+    'partition_eithers', 'lefts', 'rights', 'is_left', 'is_right', 'either',
+    'EitherChain', 'chain', 'unchain',
 ]
 
 @attr.s(frozen=True)
 class Either(object):
+    """Base type for Either sum type"""
+
     def chained(self):
         return chain(self)
 
 @attr.s(frozen=True)
 class Left(Either):
+    """Left case for Either sum type"""
+
     error = attr.ib()
 
     def get(self):
@@ -61,6 +67,8 @@ class Left(Either):
 
 @attr.s(frozen=True)
 class Right(Either):
+    """Right case for Either sum type"""
+
     result = attr.ib()
 
     def get(self):
@@ -78,13 +86,20 @@ def left(v):
 
     return Left(v)
 
+failure = left
+fail = left
+
 def right(v):
     """Smart constructor for Right"""
 
     return Right(v)
 
+success = right
+succeed = right
+
 def fmap(f, e):
-    """
+    """Apply a function `f` in Either `e`
+
     instance Functor (Either e) where
       fmap :: (a -> b) -> Either e a -> Either e b
     """
@@ -95,7 +110,8 @@ def fmap(f, e):
         return e
 
 def app(e1, e2):
-    """
+    """Sequential application in Either
+
     instance Apply (Either e) where
       app :: (Either e (a -> b)) -> Either e a -> Either e b
     """
@@ -106,7 +122,8 @@ def app(e1, e2):
         return e1
 
 def pure(v):
-    """
+    """Lift a normal value into Either
+
     instance Applicative (Either e) where
       pure :: a -> Either e a
       (<*>) = app
@@ -115,7 +132,8 @@ def pure(v):
     return right(v)
 
 def bind(e, f):
-    """
+    """Sequentially compose monadic actions in Either
+
     instance Monad (Either e) where
       (>>=) :: Either e a -> (a -> Either e b) -> Either e b
       return = pure
@@ -127,7 +145,8 @@ def bind(e, f):
         return e
 
 def combine(e1, e2):
-    """
+    """Combine values of Either
+
     instance Semigroup (Either e a) where
       (<>) :: Either e a -> Either e a -> Either e a
     """
@@ -138,7 +157,8 @@ def combine(e1, e2):
         return e1
 
 def bimap(f, g, e):
-    """
+    """fmap over both sides of Either `e`
+
     instance Bifunctor Either where
       bimap :: (a -> c) -> (b -> d) -> Either a b -> Either c d
     """
@@ -148,8 +168,30 @@ def bimap(f, g, e):
     else:
         return left(f(e.get()))
 
-def foldr(f, init, e):
+def first(f, e):
+    """fmap over the left side of Either `e`
+
+    first :: (Bifunctor f) => (a -> b) -> f a c -> f b c
+    -- Specialized for Either
+    first :: (a -> b) -> Either a c -> Either b c
     """
+
+    return bimap(f, identity, e)
+
+def second(g, e):
+    """fmap over the right side of Either `e`
+
+    second :: (Bifunctor f) => (a -> b) -> f e a -> f e b
+    -- Specialized for Either
+    second :: (a -> b) -> Either e a -> Either e b
+    """
+
+    return bimap(identity, g, e)
+
+
+def foldr(f, init, e):
+    """Right-associative folder over Either
+
     instance Foldable (Either e) where
       foldr :: (a -> b -> b) -> b -> Either e a -> b
     """
@@ -160,7 +202,8 @@ def foldr(f, init, e):
         return init
 
 def length(e):
-    """
+    """Length of Either
+
     length :: (Foldable f) => f a -> Int
     -- Specialized for (Either e)
     length :: Either e a -> Int
@@ -172,7 +215,8 @@ def length(e):
         return 0
 
 def null(e):
-    """
+    """Predicate indicating an empty (left) Either
+
     null :: (Foldable f) => f a -> Boolean
     -- Specialized for (Either e)
     null :: Either e a -> Boolean
@@ -181,7 +225,8 @@ def null(e):
     return e.is_left
 
 def traverse(f, e, ev):
-    """
+    """Map right-value to action, evaluate the action, and collect the result
+
     instance Traversable (Either e) where
       traverse :: (Applicative f) => (a -> f b) -> Either e a -> f (Either e b)
 
@@ -195,7 +240,8 @@ def traverse(f, e, ev):
         return ev.pure(e)
 
 def sequence(e, ev):
-    """
+    """Evaluate right-value action and collect the result
+
     sequenceA :: (Traversable t, Applicative f) => t (f a) -> f (t a)
     -- Specialized for (Either e)
     sequenceA :: (Applicative f) => Either e (f a) -> f (Either e a)
@@ -207,14 +253,16 @@ def sequence(e, ev):
     return traverse(identity, e, ev)
 
 def identity(v):
-    """
+    """Identity
+
     id :: a -> a
     """
 
     return v
 
 def join(e):
-    """
+    """Reduce one level of monadic nesting
+
     join :: (Monad m) => m (m a) -> m a
     -- Specialized for (Either e)
     join :: Either e (Either e a) -> Either e a
@@ -223,7 +271,8 @@ def join(e):
     return bind(e, identity)
 
 def lmap(f, e):
-    """
+    """Similar to `fmap`, but for left-valued Either
+
     lmap :: (e -> f) -> Either e a -> Either f a
     """
 
@@ -233,7 +282,8 @@ def lmap(f, e):
         return e
 
 def attempt(f, *args, **kwargs):
-    """
+    """Run a side-effect, catching any exception in a Left
+
     attempt :: (() -> b throws e) -> Either e b
     """
 
@@ -244,7 +294,8 @@ def attempt(f, *args, **kwargs):
         return left(e)
 
 def should(b, if_true, if_false):
-    """
+    """Evaluate predicate `b`, returning a left or right-value
+
     should :: Boolean -> a -> e -> Either e a
     """
 
@@ -254,7 +305,8 @@ def should(b, if_true, if_false):
         return left(if_false)
 
 def predicate(f, err):
-    """
+    """Similar to `should`, but curries f's argument for later application
+
     predicate :: (a -> Boolean) -> Err -> a -> Either Err a
     """
 
@@ -266,7 +318,8 @@ def predicate(f, err):
     return wrapper
 
 def kleisli0(f1, f2):
-    """Kleisli composition
+    """Composition for monadic actions
+
     (>=>) :: (Monad m) => (a -> m b) -> (b -> m c) -> a -> m c
     -- Specialized for (Either e)
     (>=>) :: (a -> Either e b) -> (b -> Either e c) -> a -> Either e c
@@ -278,13 +331,15 @@ def kleisli0(f1, f2):
     return composed
 
 def kleisli(f1, *fs):
-    """Kleisli composition over many actions
+    """Composition for monadic actions
+
     composeManyM :: (Monad m) => [(_ -> m _)] -> _ -> m _
     """
     return reduce(kleisli0, fs, f1)
 
 def partition_eithers(xs):
-    """
+    """Partition a list of Eithers into a list of lefts and a list of rights
+
     partitionEithers :: [Either e a] -> ([e], [a])
     """
 
@@ -296,7 +351,55 @@ def partition_eithers(xs):
             errors.append(e.get())
     return errors, results
 
+def lefts(xs):
+    """Extract all left-valued Eithers from a list
+
+    lefts :: [Either e a] -> [e]
+    """
+
+    return partition_eithers(xs)[0]
+
+def rights(xs):
+    """Extract all right-valued Eithers from a list
+
+    rights :: [Either e a] -> [a]
+    """
+
+    return partition_eithers(xs)[1]
+
+def is_left(e):
+    """Predicate to check for left-valued Either
+
+    isLeft :: Either e a -> Boolean
+    """
+
+    return e.is_left
+
+def is_right(e):
+    """Predicate to check for right-valued Either
+
+    isRight :: Either e a -> Boolean
+    """
+
+    return e.is_right
+
+def either(f, g, e):
+    """Case analysis for Either
+
+    either :: (a -> c) -> (b -> c) -> Either a b -> c
+
+    Note: Superficially similar to `bimap`, but does not lift the result back
+    into Either
+    """
+
+    if e.is_left:
+        return f(e.get())
+    else:
+        return g(e.get())
+
 class EitherChain(object):
+    """Chaining syntax for Either"""
+
     def __init__(self, e):
         self.either = e
     def fmap(self, f):
@@ -311,6 +414,10 @@ class EitherChain(object):
         return EitherChain(combine(self.either, e))
     def bimap(self, f, g):
         return EitherChain(bimap(f, g, self.either))
+    def first(self, f):
+        return EitherChain(first(f, self.either))
+    def second(self, g):
+        return EitherChain(second(g, self.either))
     def traverse(self, f, ev):
         return traverse(f, self.either, ev)
     def sequence(self, ev):
@@ -323,8 +430,12 @@ class EitherChain(object):
         return self.either
 
 def chain(e):
+    """Lift a normal Either into an EitherChain"""
+
     return EitherChain(e)
 
 def unchain(e):
+    """Unlift a normal Either from an EitherChain"""
+
     return e.unchain()
 

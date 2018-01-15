@@ -59,6 +59,14 @@ class EitherTest(unittest.TestCase):
         self.assertEqual(bimap(lf, rf, right(1)), right(2))
         self.assertEqual(bimap(lf, rf, left("err")), left("err!"))
 
+    def test_first_second(self):
+        l = left("err")
+        r = right(1)
+        self.assertEqual(first(lambda e: e + "!", l), left("err!"))
+        self.assertEqual(first(lambda e: e + "!", r), right(1))
+        self.assertEqual(second(lambda e: e + 1, l), left("err"))
+        self.assertEqual(second(lambda e: e + 1, r), right(2))
+
     def test_foldr(self):
         self.assertEqual(foldr(lambda e, v: e / v, 2, pure(10)), 5)
         self.assertEqual(foldr(lambda e, v: e / v, 2, left("err")), 2)
@@ -114,6 +122,29 @@ class EitherTest(unittest.TestCase):
 
         self.assertEqual(bind(pure("10"), f3), right(100))
         self.assertEqual(bind(pure("10"), f5), left("err"))
+
+    def test_partition_eithers(self):
+        l = [left("err1"), right(1), left("err2"), right(2)]
+        self.assertEqual(partition_eithers(l), (["err1", "err2"], [1, 2]))
+
+    def test_lefts_rights(self):
+        l = [left("err1"), right(1), left("err2"), right(2)]
+        self.assertEqual(lefts(l), ["err1", "err2"])
+        self.assertEqual(rights(l), [1, 2])
+
+    def test_is_left_right(self):
+        self.assertTrue(is_left(left("err")))
+        self.assertFalse(is_left(right(1)))
+
+        self.assertTrue(is_right(right(1)))
+        self.assertFalse(is_right(left("err")))
+
+    def test_either(self):
+        f = lambda _e: 0
+        g = lambda _e: 1
+
+        self.assertEqual(either(f, g, left("err")), 0)
+        self.assertEqual(either(f, g, right(1234)), 1)
 
 class Laws(unittest.TestCase):
     def test_functor(self):
