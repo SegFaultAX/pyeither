@@ -53,6 +53,15 @@ def main():
 pip install pyeither
 ```
 
+## Motivation
+
+I've created an IPython Notebook that describes the motivation for this project
+as an interactive tutorial building an analogous system from scratch. If you're
+interested in learning more about the **why** of this project, please check it
+out!
+
+[**Motivation Notebook**](https://github.com/SegFaultAX/pyeither/blob/master/pyeither_demo.ipynb)
+
 ## Special Thanks
 
 This library depends on the absolutely wonderful
