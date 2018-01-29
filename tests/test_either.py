@@ -41,6 +41,12 @@ class EitherTest(unittest.TestCase):
         self.assertEqual(app(right(lambda e: e + 1), left("err")), left("err"))
         self.assertEqual(app(left("err1"), left("err2")), left("err1"))
 
+    def test_lift(self):
+        add = lambda a, b: a + b
+        self.assertEqual(lift(add)(pure(1), pure(2)), pure(3))
+        self.assertEqual(lift(add)(pure(1), left("err")), left("err"))
+        self.assertEqual(lift(add)(left("err1"), pure("err2")), left("err1"))
+
     def test_pure(self):
         self.assertEqual(pure(1), right(1))
 
@@ -102,16 +108,16 @@ class EitherTest(unittest.TestCase):
         self.assertEqual(predicate(lambda e: False, "err")(1), left("err"))
 
     def test_chain(self):
-        c1 = chain(pure(1)).fmap(lambda e: e + 1).bind(lambda e: pure(e * 2))
-        self.assertEqual(c1.unchain(), right(4))
+        c1 = pure(1).fmap(lambda e: e + 1).bind(lambda e: pure(e * 2))
+        self.assertEqual(c1, right(4))
 
-        c2 = chain(pure(1)).bind(lambda _: left("err")).lmap(lambda e: e + "!")
-        self.assertEqual(c2.unchain(), left("err!"))
+        c2 = pure(1).bind(lambda _: left("err")).lmap(lambda e: e + "!")
+        self.assertEqual(c2, left("err!"))
 
         lf = lambda e: e + "!"
         rf = lambda e: e * 10
-        c3 = chain(pure(lambda e: e + 1)).app(pure(1)).bimap(lf, rf)
-        self.assertEqual(c3.unchain(), right(20))
+        c3 = pure(lambda e: e + 1).app(pure(1)).bimap(lf, rf)
+        self.assertEqual(c3, right(20))
 
     def test_kleisli(self):
         f1 = lambda e: pure(int(e))

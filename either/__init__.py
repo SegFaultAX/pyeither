@@ -35,19 +35,48 @@ import attr
 __author__ = "Michael-Keith Bernard"
 __all__ = [
     'Either', 'Left', 'Right', 'left', 'failure', 'fail', 'right', 'success',
-    'succeed', 'fmap', 'app', 'pure', 'bind', 'combine', 'bimap', 'first',
-    'second', 'foldr', 'length', 'null', 'traverse', 'sequence', 'identity',
-    'join', 'lmap', 'attempt', 'should', 'predicate', 'kleisli',
+    'succeed', 'fmap', 'app', 'pure', 'lift', 'bind', 'combine', 'bimap',
+    'first', 'second', 'foldr', 'length', 'null', 'traverse', 'sequence',
+    'identity', 'join', 'lmap', 'attempt', 'should', 'predicate', 'kleisli',
     'partition_eithers', 'lefts', 'rights', 'is_left', 'is_right', 'either',
-    'EitherChain', 'chain', 'unchain',
+    'chain', 'unchain',
 ]
 
 @attr.s(frozen=True)
 class Either(object):
     """Base type for Either sum type"""
 
+    def fmap(self, f):
+        return fmap(f, self)
+    def app(self, e2):
+        return app(self, e2)
+    def pure(self, v):
+        return pure(v)
+    def bind(self, f):
+        return bind(self, f)
+    def combine(self, e):
+        return combine(self, e)
+    def bimap(self, f, g):
+        return bimap(f, g, self)
+    def first(self, f):
+        return first(f, self)
+    def second(self, g):
+        return second(g, self)
+    def traverse(self, f, ev):
+        return traverse(f, self.either, ev)
+    def sequence(self, ev):
+        return sequence(self.either, ev)
+    def join(self):
+        return join(self)
+    def lmap(self, f):
+        return lmap(f, self)
+
     def chained(self):
-        return chain(self)
+        """DEPRECATED: Chaining syntax start"""
+        return self
+    def unchain(self):
+        """DEPRECATED: Chaining syntax end"""
+        return self
 
 @attr.s(frozen=True)
 class Left(Either):
@@ -130,6 +159,38 @@ def pure(v):
     """
 
     return right(v)
+
+@attr.s(frozen=True)
+class ArgCollect:
+    """A helper class for collecting variable-length argument lists"""
+
+    fn = attr.ib()
+    args = attr.ib(default=attr.Factory(list))
+
+    def __call__(self, arg):
+        self.args.append(arg)
+        return self
+
+    def apply(self):
+        return self.fn(*self.args)
+
+def lift(f):
+    """Promote a function to actions
+
+    liftA :: (Applicative f) => (a -> b) -> f a -> f b
+    -- Specialized for Either
+    liftA :: (a -> b) -> Either e a -> Either e b
+
+    NOTE: Python support variadic functions, so we don't need to supply
+    variations for larger arities, eg `liftA2`, `liftA3` etc.
+    """
+
+    def lifted(*args):
+        init = pure(ArgCollect(f))
+        for arg in args:
+            init = app(init, arg)
+        return fmap(lambda c: c.apply(), init)
+    return lifted
 
 def bind(e, f):
     """Sequentially compose monadic actions in Either
@@ -397,45 +458,12 @@ def either(f, g, e):
     else:
         return g(e.get())
 
-class EitherChain(object):
-    """Chaining syntax for Either"""
-
-    def __init__(self, e):
-        self.either = e
-    def fmap(self, f):
-        return EitherChain(fmap(f, self.either))
-    def app(self, e2):
-        return EitherChain(app(self.either, e2))
-    def pure(self, v):
-        return EitherChain(pure(v))
-    def bind(self, f):
-        return EitherChain(bind(self.either, f))
-    def combine(self, e):
-        return EitherChain(combine(self.either, e))
-    def bimap(self, f, g):
-        return EitherChain(bimap(f, g, self.either))
-    def first(self, f):
-        return EitherChain(first(f, self.either))
-    def second(self, g):
-        return EitherChain(second(g, self.either))
-    def traverse(self, f, ev):
-        return traverse(f, self.either, ev)
-    def sequence(self, ev):
-        return sequence(self.either, ev)
-    def join(self):
-        return EitherChain(join(self.either))
-    def lmap(self, f):
-        return EitherChain(lmap(f, self.either))
-    def unchain(self):
-        return self.either
-
 def chain(e):
-    """Lift a normal Either into an EitherChain"""
+    """DEPRECATED: Lift a normal Either into an EitherChain"""
 
-    return EitherChain(e)
+    return e
 
 def unchain(e):
-    """Unlift a normal Either from an EitherChain"""
+    """DEPRECATED: Unlift a normal Either from an EitherChain"""
 
-    return e.unchain()
-
+    return e
