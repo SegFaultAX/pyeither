@@ -47,36 +47,52 @@ class Either(object):
     """Base type for Either sum type"""
 
     def fmap(self, f):
+        """See: either.fmap"""
         return fmap(f, self)
-    def app(self, e2):
-        return app(self, e2)
-    def pure(self, v):
-        return pure(v)
-    def bind(self, f):
-        return bind(self, f)
-    def combine(self, e):
-        return combine(self, e)
-    def bimap(self, f, g):
-        return bimap(f, g, self)
-    def first(self, f):
-        return first(f, self)
-    def second(self, g):
-        return second(g, self)
-    def traverse(self, f, ev):
-        return traverse(f, self.either, ev)
-    def sequence(self, ev):
-        return sequence(self.either, ev)
-    def join(self):
-        return join(self)
-    def lmap(self, f):
-        return lmap(f, self)
 
-    def chained(self):
-        """DEPRECATED: Chaining syntax start"""
-        return self
-    def unchain(self):
-        """DEPRECATED: Chaining syntax end"""
-        return self
+    def app(self, e2):
+        """See: either.app"""
+        return app(self, e2)
+
+    def pure(self, v):
+        """See: either.pure"""
+        return pure(v)
+
+    def bind(self, f):
+        """See: either.bind"""
+        return bind(self, f)
+
+    def combine(self, e):
+        """See: either.combine"""
+        return combine(self, e)
+
+    def bimap(self, f, g):
+        """See: either.bimap"""
+        return bimap(f, g, self)
+
+    def first(self, f):
+        """See: either.first"""
+        return first(f, self)
+
+    def second(self, g):
+        """See: either.second"""
+        return second(g, self)
+
+    def traverse(self, f, ev):
+        """See: either.traverse"""
+        return traverse(f, self.either, ev)
+
+    def sequence(self, ev):
+        """See: either.sequence"""
+        return sequence(self.either, ev)
+
+    def join(self):
+        """See: either.join"""
+        return join(self)
+
+    def lmap(self, f):
+        """See: either.lmap"""
+        return lmap(f, self)
 
 @attr.s(frozen=True)
 class Left(Either):
@@ -457,13 +473,3 @@ def either(f, g, e):
         return f(e.get())
     else:
         return g(e.get())
-
-def chain(e):
-    """DEPRECATED: Lift a normal Either into an EitherChain"""
-
-    return e
-
-def unchain(e):
-    """DEPRECATED: Unlift a normal Either from an EitherChain"""
-
-    return e
