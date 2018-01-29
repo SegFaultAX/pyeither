@@ -29,10 +29,8 @@ def main():
     # Equivalent to above:
 
     e_data2 = (either.pure(path)
-        .chain()
         .bind(either.predicate(os.path.isfile, "not a file"))
-        .bind(lambda p: either.attempt(json.load, p))
-        .unchain())
+        .bind(lambda p: either.attempt(json.load, p)))
 
     # Python lacks do-notation, so there's not a nice equivalent syntax
 
