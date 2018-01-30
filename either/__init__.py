@@ -177,7 +177,7 @@ def pure(v):
     return right(v)
 
 @attr.s(frozen=True)
-class ArgCollect:
+class ArgCollect(object):
     """A helper class for collecting variable-length argument lists"""
 
     fn = attr.ib()
