@@ -5,7 +5,7 @@ from setuptools import setup
 if __name__ == "__main__":
     setup(
         name='pyeither',
-        version='0.1.0',
+        version='0.1.1',
         packages=['either',],
         license='MIT',
         description='An implementation of Data.Either from Haskell in Python',
