@@ -37,9 +37,9 @@ __all__ = [
     'Either', 'Left', 'Right', 'left', 'failure', 'fail', 'right', 'success',
     'succeed', 'fmap', 'app', 'pure', 'lift', 'bind', 'combine', 'bimap',
     'first', 'second', 'foldr', 'length', 'null', 'traverse', 'sequence',
-    'identity', 'join', 'lmap', 'attempt', 'should', 'predicate', 'kleisli',
-    'partition_eithers', 'lefts', 'rights', 'is_left', 'is_right', 'either',
-    'chain', 'unchain',
+    'traverseL', 'sequenceL', 'identity', 'join', 'lmap', 'attempt', 'should',
+    'predicate', 'kleisli', 'partition_eithers', 'lefts', 'rights', 'is_left',
+    'is_right', 'either',
 ]
 
 @attr.s(frozen=True)
@@ -328,6 +328,32 @@ def sequence(e, ev):
     """
 
     return traverse(identity, e, ev)
+
+def traverseL(f, l):
+    """Traversal for lists of either actions given by `f`
+
+    -- `traverse` specialized for List and Either
+    traverse :: (a -> Either e b) -> [a] -> Either e [b]
+
+    NOTE: List traversal is common, but this library does not provide an
+    instance of Traversable for lists, so this function is supplied mostly as a
+    convenience.
+    """
+
+    append = lambda xs, x: xs + [x]
+    init = pure([])
+    for e in l:
+        init = lift(append)(init, f(e))
+    return init
+
+def sequenceL(l):
+    """Traversal for lists of either actions
+
+    -- `sequence` specialized for List and Either
+    sequence :: [Either e a] -> Either e [a]
+    """
+
+    return traverseL(identity, l)
 
 def identity(v):
     """Identity

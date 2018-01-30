@@ -85,6 +85,16 @@ class EitherTest(unittest.TestCase):
         self.assertEqual(sequence(pure(Id(1)), Id), Id(pure(1)))
         self.assertEqual(sequence(left("err"), Id), Id(left("err")))
 
+    def test_traverseL(self):
+        bad_even = lambda n: left("err" + str(n)) if n % 2 == 0 else pure(n)
+
+        self.assertEqual(traverseL(pure, [1,2,3,4]), pure([1,2,3,4]))
+        self.assertEqual(traverseL(bad_even, [1,2,3,4]), left("err2"))
+
+    def test_sequenceL(self):
+        self.assertEqual(sequenceL([pure(1), pure(2), pure(3)]), pure([1,2,3]))
+        self.assertEqual(sequenceL([pure(1), left("err1"), left("err2"), pure(3)]), left("err1"))
+
     def test_join(self):
         self.assertEqual(join(pure(pure(5))), pure(5))
 
